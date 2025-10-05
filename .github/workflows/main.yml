@@ -11,7 +11,7 @@ permissions:
   security-events: write
 
 jobs:
-  # --- Step 1: Static Code Scan (Trivy) ---
+  # --- Step 1: SAST (Trivy) ---
   sast_scan:
     name: Run SAST Scan
     runs-on: ubuntu-20.04
@@ -37,7 +37,7 @@ jobs:
           category: trivy
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4.4.3
+        uses: actions/upload-artifact@v3
         with:
           name: trivy-results
           path: trivy-results.sarif
@@ -57,3 +57,19 @@ jobs:
 
       - name: Build Docker Image
         run: docker build -f Dockerfile -t pygoat_app:latest .
+
+      - name: Docker Scout Scan
+        uses: docker/scout-action@v1.15.0
+        with:
+          dockerhub-user: ${{ secrets.REPO_USER }}
+          dockerhub-password: ${{ secrets.REPO_PWD }}
+          command: quickview,cves
+          only-severities: critical,high
+          sarif-file: scout-report.sarif
+
+      - name: Upload Artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-scout-findings
+          path: scout-report.sarif
