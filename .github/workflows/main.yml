@@ -3,8 +3,9 @@ on:
   push:
     branches: [ main ]
   pull_request:
+  workflow_dispatch:   # ← 수동 실행 허용
 
-# 같은 브랜치에 새 커밋이 오면 이전 실행을 자동 취소(대기열 방지)
+# 같은 브랜치에서 새 커밋 오면 이전 실행 취소(대기열 줄이기)
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -12,7 +13,7 @@ concurrency:
 jobs:
   sast_scan:
     name: Run Static Code Scan
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
