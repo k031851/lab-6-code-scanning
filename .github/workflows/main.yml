@@ -1,23 +1,20 @@
 ﻿name: CI
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
   workflow_dispatch:
 
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
-# ✅ Security 탭 업로드를 위해 필요
 permissions:
   contents: read
   security-events: write
 
 jobs:
+  # --- Step 1: Static Code Scan (Trivy) ---
   sast_scan:
-    name: Run Static Code Scan
-    runs-on: ubuntu-latest
+    name: Run SAST Scan
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,16 +30,30 @@ jobs:
           output: trivy-results.sarif
           severity: CRITICAL
 
-      # ✅ 여기서 Security → Code scanning alerts 로 업로드됨
       - name: Upload SARIF to Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-results.sarif
           category: trivy
 
-      # (선택) 아티팩트로도 보관하고 싶으면 유지
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.4.3
         with:
           name: trivy-results
           path: trivy-results.sarif
+
+  # --- Step 2: Docker Scout Image Scan ---
+  image_scan:
+    name: Build Image and Run Image Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker
+        uses: docker-practice/actions-setup-docker@v1
+        with:
+          docker_version: '20.10.7'
+
+      - name: Build Docker Image
+        run: docker build -f Dockerfile -t pygoat_app:latest .
