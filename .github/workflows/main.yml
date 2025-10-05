@@ -3,12 +3,16 @@ on:
   push:
     branches: [ main ]
   pull_request:
-  workflow_dispatch:   # ← 수동 실행 허용
+  workflow_dispatch:
 
-# 같은 브랜치에서 새 커밋 오면 이전 실행 취소(대기열 줄이기)
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
+
+# ✅ Security 탭 업로드를 위해 필요
+permissions:
+  contents: read
+  security-events: write
 
 jobs:
   sast_scan:
@@ -29,6 +33,14 @@ jobs:
           output: trivy-results.sarif
           severity: CRITICAL
 
+      # ✅ 여기서 Security → Code scanning alerts 로 업로드됨
+      - name: Upload SARIF to Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy
+
+      # (선택) 아티팩트로도 보관하고 싶으면 유지
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.4.3
         with:
