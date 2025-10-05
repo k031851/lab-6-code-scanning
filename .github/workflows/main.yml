@@ -1,10 +1,11 @@
 mkdir -Force .github\workflows
-@"
-name: build
 
+$yml = @'
+name: build
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
 
 jobs:
@@ -21,11 +22,11 @@ jobs:
         env:
           TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:2
         with:
-          scan-type: 'fs'            # 코드(파일시스템) 스캔
+          scan-type: fs
           ignore-unfixed: true
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL'
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4.4.3
@@ -52,8 +53,8 @@ jobs:
       - name: Docker Scout Scan
         uses: docker/scout-action@v1.15.0
         with:
-          dockerhub-user: \${{ secrets.REPO_USER }}
-          dockerhub-password: \${{ secrets.REPO_PWD }}
+          dockerhub-user: ${{ secrets.REPO_USER }}
+          dockerhub-password: ${{ secrets.REPO_PWD }}
           command: quickview,cves
           only-severities: critical,high
           sarif-file: scout-report.sarif
@@ -64,5 +65,6 @@ jobs:
         with:
           name: docker-scout-findings
           path: scout-report.sarif
-"@ | Set-Content -Encoding UTF8 .github\workflows\main.yml
+'@
 
+Set-Content -Encoding UTF8 .github\workflows\main.yml $yml
