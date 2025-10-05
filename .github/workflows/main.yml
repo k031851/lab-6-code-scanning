@@ -39,7 +39,7 @@ jobs:
           category: trivy
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: trivy-results
           path: trivy-results.sarif
@@ -71,7 +71,7 @@ jobs:
 
       - name: Upload Artifact
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: docker-scout-findings
           path: scout-report.sarif
