@@ -1,4 +1,4 @@
-﻿name: CI
+﻿name: build
 on:
   push:
     branches:
@@ -6,12 +6,13 @@ on:
   pull_request:
   workflow_dispatch:
 
+# SARIF 업로드용 권한(Trivy 결과를 Security 탭에 올릴 때 필요)
 permissions:
   contents: read
   security-events: write
 
 jobs:
-  # --- Step 1: SAST (Trivy) ---
+  # --- Part 1: Static Code Scan (Trivy, repo mode) ---
   sast_scan:
     name: Run SAST Scan
     runs-on: ubuntu-20.04
@@ -30,6 +31,7 @@ jobs:
           output: trivy-results.sarif
           severity: CRITICAL
 
+      # (선택) Security → Code scanning alerts에 바로 표시
       - name: Upload SARIF to Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -42,7 +44,7 @@ jobs:
           name: trivy-results
           path: trivy-results.sarif
 
-  # --- Step 2: Docker Scout Image Scan ---
+  # --- Part 2: Docker Scout Image Scan ---
   image_scan:
     name: Build Image and Run Image Scan
     runs-on: ubuntu-latest
@@ -61,8 +63,8 @@ jobs:
       - name: Docker Scout Scan
         uses: docker/scout-action@v1.15.0
         with:
-          dockerhub-user: ${{ secrets.REPO_USER }}
-          dockerhub-password: ${{ secrets.REPO_PWD }}
+          dockerhub-user: ${{ secrets.REPO_USER }}   # ex) hyungjunchoi1
+          dockerhub-password: ${{ secrets.REPO_PWD }}# ex) dckr_pat_...
           command: quickview,cves
           only-severities: critical,high
           sarif-file: scout-report.sarif
